@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: Personal-Assistant
+Version: 1.0
+Summary: Data and File Assistant
+Home-page: https://github.com/ArleKinG44/GOIT_Projekt_group_3
+Author: Hufflepuff
+Author-email: denpolet@gmail.com
+License: MIT
+License-File: LICENSE
+Requires-Dist: prompt_toolkit
+Requires-Dist: pygments
+Requires-Dist: tabulate
+Requires-Dist: termcolor
+
+The "Personal Assistant" bot is designed to assist users in managing their contacts, notes, and files through a natural language interface. The bot leverages advanced functionalities to understand user input and provide relevant suggestions based on context.
