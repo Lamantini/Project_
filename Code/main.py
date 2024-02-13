@@ -1,3 +1,4 @@
+from user_interface import *
 from tabulate import tabulate
 from termcolor import colored
 from prompt_toolkit import PromptSession
@@ -9,6 +10,7 @@ from sort import main as sort_main
 import random
 import textwrap
 
+console_ui = Console_UserInterface()
 address_book = AddressBook()
 notebook = Notebook()
 
@@ -693,18 +695,17 @@ def choice_action(data, commands):
 
 def main():
 
-    filename = input("Please enter the filename to load/create the Personal Assistant: ").strip()
+    filename = console_ui.get_input("Please enter the filename to load/create the Personal Assistant: ").strip()
 
     address_book.load_from_disk(filename, notebook)
-    print("\nWelcome to Your Personal Assistant!\n",
-          "Type 'help' to see available commands and instructions.")
+    console_ui.show_output("\nWelcome to Your Personal Assistant!\nType 'help' to see available commands and instructions.")
     session = PromptSession(
         lexer=PygmentsLexer(SqlLexer), completer=sql_completer)
     while True:
         data = session.prompt("\nPlease enter the command: ").lower().strip()
         func, args = choice_action(data, commands)
         result = func(args) if args else func()
-        print(result)
+        console_ui.show_output(result)
         if result == "Good bye!":
             address_book.save_to_disk(filename, notebook)
             break
