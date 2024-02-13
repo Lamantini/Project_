@@ -2,6 +2,10 @@ import os
 import shutil
 import zipfile
 import re
+from threading import Thread
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(threadName)s %(message)s')
 
 # Transliterates the Cyrillic alphabet into Latin
 UKRAINIAN_SYMBOLS = 'абвгдеєжзиіїйклмнопрстуфхцчшщьюя'
@@ -98,52 +102,64 @@ def process_other(item, item_path, normalized_item, source_folder):
     shutil.move(item_path, dest_path)
 
 
+def process_file(item, item_path, normalized_item, source_folder):
+    extension = item.split('.')[-1].lower()
+
+    processors = {
+        'jpeg': process_image,
+        'png': process_image,
+        'jpg': process_image,
+        'svg': process_image,
+        'avi': process_video,
+        'mp4': process_video,
+        'mov': process_video,
+        'mkv': process_video,
+        'doc': process_document,
+        'docx': process_document,
+        'txt': process_document,
+        'pdf': process_document,
+        'xlsx': process_document,
+        'pptx': process_document,
+        'mp3': process_audio,
+        'ogg': process_audio,
+        'wav': process_audio,
+        'amr': process_audio,
+        'zip': process_archive,
+        'gz': process_archive,
+        'tar': process_archive
+    }
+
+    processor = processors.get(extension, process_other)
+    processor(item, item_path, normalized_item, source_folder)
+
+
 def process_folder(folder, source_folder):
+    threads = []
     for item in os.listdir(folder):
         item_path = os.path.join(folder, item)
         normalized_item = normalize(item)
 
         if os.path.isfile(item_path):
-            extension = item.split('.')[-1].lower()
-
-            processors = {
-                'jpeg': process_image,
-                'png': process_image,
-                'jpg': process_image,
-                'svg': process_image,
-                'avi': process_video,
-                'mp4': process_video,
-                'mov': process_video,
-                'mkv': process_video,
-                'doc': process_document,
-                'docx': process_document,
-                'txt': process_document,
-                'pdf': process_document,
-                'xlsx': process_document,
-                'pptx': process_document,
-                'mp3': process_audio,
-                'ogg': process_audio,
-                'wav': process_audio,
-                'amr': process_audio,
-                'zip': process_archive,
-                'gz': process_archive,
-                'tar': process_archive
-            }
-
-            processor = processors.get(extension, process_other)
-            processor(item, item_path, normalized_item, source_folder)
-
+            thread = Thread(target=process_file, args=(
+                item, item_path, normalized_item, source_folder))
+            thread.start()
+            threads.append(thread)
         elif os.path.isdir(item_path):
-            # Recursively process nested folders
+            # Рекурсивно обробляємо вкладені папки
             if item not in ('images', 'video', 'documents', 'audio',
                             'archives', 'others'):
-                process_folder(item_path, source_folder)
-                folders.append(item)
+                thread = Thread(target=process_folder, args=(
+                    item_path, source_folder))
+                thread.start()
+                threads.append(thread)
             else:
                 shutil.rmtree(item_path)
         else:
-            # We ignore symbolic links and other special files
+            # Ігноруємо символічні посилання та інші спеціальні файли
             continue
+
+    for thread in threads:
+        thread.join()
 
 
 def remove_empty_folders(path):
@@ -155,19 +171,10 @@ def remove_empty_folders(path):
 
 
 def main(source_folder):
-
     process_folder(source_folder, source_folder)
     remove_empty_folders(source_folder)
-
-    print(f"\nImages: {images_files}\n")
-    print(f"Video: {video_files}\n")
-    print(f"Documents: {doc_files}\n")
-    print(f"Audio: {audio_files}\n")
-    print(f"Archives: {archives}\n")
-    print(f"Unknown Extensions: {unknown_extensions}\n")
-    print(f"Others: {others}\n")
-    print(f"Known Extensions: {known_extensions}\n")
 
 
 if __name__ == "__main__":
     main()
+
